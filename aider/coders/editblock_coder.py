@@ -351,6 +351,9 @@ def strip_quoted_wrapping(res, fname=None, fence=DEFAULT_FENCE):
     if fname and res[0].strip().endswith(Path(fname).name):
         res = res[1:]
 
+    if not res:
+        return ""
+
     if res[0].startswith(fence[0]) and res[-1].startswith(fence[1]):
         res = res[1:-1]
 
@@ -601,6 +604,8 @@ def find_filename(lines, fence, valid_fnames):
 
 def find_similar_lines(search_lines, content_lines, threshold=0.6):
     search_lines = search_lines.splitlines()
+    if not search_lines:
+        return ""
     content_lines = content_lines.splitlines()
 
     best_ratio = 0

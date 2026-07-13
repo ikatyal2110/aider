@@ -89,6 +89,18 @@ class TestUtils(unittest.TestCase):
         result = eb.strip_quoted_wrapping(input_text)
         self.assertEqual(result, expected_output)
 
+    def test_strip_quoted_wrapping_only_filename(self):
+        # When the input is only the filename line, stripping it should return ""
+        # rather than raising IndexError when checking for fence on empty list.
+        result = eb.strip_quoted_wrapping("filename.txt", fname="filename.txt")
+        self.assertEqual(result, "")
+
+    def test_find_similar_lines_empty_search(self):
+        # An empty search string should return "" instead of raising IndexError
+        # when best_match is [] and the code tries to index best_match[0].
+        result = eb.find_similar_lines("", "some content\nwith lines\nhere")
+        self.assertEqual(result, "")
+
     def test_find_original_update_blocks(self):
         edit = """
 Here's the change:
