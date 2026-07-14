@@ -1,6 +1,6 @@
 import unittest
 
-from aider.coders.udiff_coder import find_diffs
+from aider.coders.udiff_coder import cleanup_pure_whitespace_lines, find_diffs
 from aider.dump import dump  # noqa: F401
 
 
@@ -113,6 +113,22 @@ These changes will add the `--check-update` option to the command-line interface
         dump(edits)
         self.assertEqual(len(edits), 2)
         self.assertEqual(len(edits[0][1]), 3)
+
+
+    def test_cleanup_pure_whitespace_lines(self):
+        # LF-terminated whitespace line: keep newline, strip spaces
+        self.assertEqual(cleanup_pure_whitespace_lines(["   \n"]), ["\n"])
+        # CRLF-terminated whitespace line: keep full \r\n ending, not just \r
+        self.assertEqual(cleanup_pure_whitespace_lines(["   \r\n"]), ["\r\n"])
+        # Whitespace line with no newline: should become empty string, not first char
+        self.assertEqual(cleanup_pure_whitespace_lines(["   "]), [""])
+        # Non-whitespace line: unchanged
+        self.assertEqual(cleanup_pure_whitespace_lines(["hello\n"]), ["hello\n"])
+        # Mixed list
+        self.assertEqual(
+            cleanup_pure_whitespace_lines(["hello\n", "   \r\n", "   ", "world\n"]),
+            ["hello\n", "\r\n", "", "world\n"],
+        )
 
 
 if __name__ == "__main__":

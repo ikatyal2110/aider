@@ -241,9 +241,13 @@ def make_new_lines_explicit(content, hunk):
 
 
 def cleanup_pure_whitespace_lines(lines):
-    res = [
-        line if line.strip() else line[-(len(line) - len(line.rstrip("\r\n")))] for line in lines
-    ]
+    res = []
+    for line in lines:
+        if line.strip():
+            res.append(line)
+        else:
+            n = len(line) - len(line.rstrip("\r\n"))
+            res.append(line[-n:] if n else "")
     return res
 
 
