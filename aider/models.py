@@ -434,6 +434,19 @@ class Model(ModelSettings):
             if "reasoning_effort" not in self.accepts_settings:
                 self.accepts_settings.append("reasoning_effort")
 
+        # VertexAI's Anthropic-compatible API rejects the prompt-caching-2024-07-31
+        # beta header. Strip it from extra_headers for vertex_ai Claude models so that
+        # user configs or merged settings don't accidentally send it.
+        if self.name.startswith("vertex_ai/") and "claude" in self.name.lower():
+            extra_headers = (self.extra_params or {}).get("extra_headers", {})
+            if "anthropic-beta" in extra_headers:
+                betas = [b.strip() for b in extra_headers["anthropic-beta"].split(",")]
+                betas = [b for b in betas if b != "prompt-caching-2024-07-31"]
+                if betas:
+                    extra_headers["anthropic-beta"] = ",".join(betas)
+                else:
+                    del extra_headers["anthropic-beta"]
+
     def apply_generic_model_settings(self, model):
         if "/o3-mini" in model:
             self.edit_format = "diff"

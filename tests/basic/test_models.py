@@ -422,6 +422,54 @@ class TestModels(unittest.TestCase):
             except OSError:
                 pass
 
+    def test_vertex_ai_claude_strips_prompt_caching_beta_header(self):
+        """VertexAI rejects the prompt-caching-2024-07-31 anthropic-beta header.
+
+        Even if user settings or global overrides inject this header, it must
+        be stripped for vertex_ai/claude-* models before the request is sent.
+        """
+        import tempfile
+
+        import yaml
+
+        # Simulate a user config that mistakenly adds the prompt-caching header
+        test_settings = [
+            {
+                "name": "vertex_ai/claude-3-5-sonnet-v2@20241022",
+                "cache_control": True,
+                "extra_params": {
+                    "extra_headers": {
+                        "anthropic-beta": "prompt-caching-2024-07-31,pdfs-2024-09-25",
+                    },
+                    "max_tokens": 8192,
+                },
+            },
+        ]
+
+        tmp = tempfile.mktemp(suffix=".yml")
+        try:
+            with open(tmp, "w") as f:
+                yaml.dump(test_settings, f)
+
+            register_models([tmp])
+
+            model = Model("vertex_ai/claude-3-5-sonnet-v2@20241022")
+
+            # prompt-caching-2024-07-31 must be stripped; VertexAI rejects it
+            extra_headers = (model.extra_params or {}).get("extra_headers", {})
+            anthropic_beta = extra_headers.get("anthropic-beta", "")
+            self.assertNotIn("prompt-caching-2024-07-31", anthropic_beta)
+
+            # Other betas (e.g. pdfs-2024-09-25) may remain
+            self.assertIn("pdfs-2024-09-25", anthropic_beta)
+        finally:
+            import os
+
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
     @patch("aider.models.litellm.completion")
     @patch.object(Model, "token_count")
     def test_ollama_num_ctx_set_when_missing(self, mock_token_count, mock_completion):
