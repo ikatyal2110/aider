@@ -41,6 +41,27 @@ class TestChatSummary(TestCase):
         tokenized = self.chat_summary.tokenize(messages)
         self.assertEqual(tokenized, [(2, messages[0]), (2, messages[1])])
 
+    def test_summarize_all_with_list_content(self):
+        self.mock_model.simple_send_with_retries.return_value = "This is a summary"
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Hello world"},
+                    {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+                ],
+            },
+            {"role": "assistant", "content": "Hi there"},
+        ]
+        # Should not raise TypeError when content is a list (multimodal message)
+        summary = self.chat_summary.summarize_all(messages)
+        self.assertEqual(len(summary), 1)
+        self.assertEqual(summary[0]["role"], "user")
+        # Verify text was extracted and passed to the model for summarization
+        call_args = self.mock_model.simple_send_with_retries.call_args[0][0]
+        user_msg = next(m for m in call_args if m["role"] == "user")
+        self.assertIn("Hello world", user_msg["content"])
+
     def test_summarize_all(self):
         self.mock_model.simple_send_with_retries.return_value = "This is a summary"
         messages = [

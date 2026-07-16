@@ -102,7 +102,14 @@ class ChatSummary:
             if role not in ("USER", "ASSISTANT"):
                 continue
             content += f"# {role}\n"
-            content += msg["content"]
+            msg_content = msg["content"]
+            if isinstance(msg_content, list):
+                msg_content = "\n".join(
+                    item.get("text", "")
+                    for item in msg_content
+                    if isinstance(item, dict) and item.get("type") == "text"
+                )
+            content += msg_content
             if not content.endswith("\n"):
                 content += "\n"
 
