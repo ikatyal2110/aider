@@ -1434,5 +1434,32 @@ This command will print 'Hello, World!' to the console."""
                     mock_editor.run.assert_not_called()
 
 
+    def test_vertex_ai_cache_headers_suppressed(self):
+        # Regression test for https://github.com/Aider-AI/aider/issues/2961
+        # vertex_ai Claude models use Google's native caching; sending Anthropic-style
+        # cache_control markers causes litellm to inject an anthropic-beta header that
+        # VertexAI rejects.  cache_prompts=True + cache_control=True must NOT set
+        # add_cache_headers for vertex_ai models.
+        with GitTemporaryDirectory():
+            io = InputOutput(yes=True)
+            model = Model("gpt-3.5-turbo")
+            model.name = "vertex_ai/claude-3-5-sonnet-v2@20241022"
+            model.cache_control = True
+
+            coder = Coder.create(model, "whole", io=io, cache_prompts=True)
+            self.assertFalse(coder.add_cache_headers)
+
+    def test_non_vertex_ai_cache_headers_enabled(self):
+        # Companion to test_vertex_ai_cache_headers_suppressed: for a non-vertex_ai model
+        # with cache_control=True and cache_prompts=True, add_cache_headers should be True.
+        with GitTemporaryDirectory():
+            io = InputOutput(yes=True)
+            model = Model("gpt-3.5-turbo")
+            model.cache_control = True
+
+            coder = Coder.create(model, "whole", io=io, cache_prompts=True)
+            self.assertTrue(coder.add_cache_headers)
+
+
 if __name__ == "__main__":
     unittest.main()

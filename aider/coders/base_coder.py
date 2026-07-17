@@ -424,7 +424,11 @@ class Coder:
         self.stream = stream and main_model.streaming
 
         if cache_prompts and self.main_model.cache_control:
-            self.add_cache_headers = True
+            # vertex_ai Claude uses Google's native caching; the Anthropic-style
+            # cache_control markers cause litellm to inject an anthropic-beta header
+            # that VertexAI rejects. Skip cache headers for these models.
+            if not self.main_model.name.startswith("vertex_ai/"):
+                self.add_cache_headers = True
 
         self.show_diffs = show_diffs
 
