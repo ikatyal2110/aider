@@ -611,6 +611,31 @@ class TestCommands(TestCase):
             dump(coder.abs_fnames)
             self.assertIn(str(fname.resolve()), coder.abs_fnames)
 
+    def test_cmd_add_glob_with_bracket_dir(self):
+        # Glob patterns like app/[id]/*.tsx should match literal [id] directories
+        # (e.g. Next.js/SvelteKit dynamic route directories)
+        with GitTemporaryDirectory():
+            io = InputOutput(pretty=False, fancy_input=False, yes=False)
+            from aider.coders import Coder
+
+            coder = Coder.create(self.GPT35, None, io)
+            commands = Commands(io, coder)
+
+            bracket_dir = Path("app") / "[id]"
+            bracket_dir.mkdir(parents=True)
+            fname = bracket_dir / "page.tsx"
+            fname.write_text("export default function Page() {}")
+
+            repo = git.Repo()
+            repo.git.add(str(fname))
+            repo.git.commit("-m", "init")
+
+            # Use glob pattern with bracket directory - this previously failed
+            # because Path.glob treated [id] as a character class
+            commands.cmd_add("app/[id]/*.tsx")
+
+            self.assertIn(str(fname.resolve()), coder.abs_fnames)
+
     def test_cmd_add_abs_filename(self):
         with ChdirTemporaryDirectory():
             io = InputOutput(pretty=False, fancy_input=False, yes=False)

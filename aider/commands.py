@@ -771,7 +771,8 @@ class Commands:
                 raw_matched_files = [Path(pattern)]
             else:
                 try:
-                    raw_matched_files = list(Path(self.coder.root).glob(pattern))
+                    escaped = re.sub(r"([\[\]])", r"[\1]", pattern)
+                    raw_matched_files = list(Path(self.coder.root).glob(escaped))
                 except (IndexError, AttributeError):
                     raw_matched_files = []
         except ValueError as err:
@@ -1353,12 +1354,14 @@ class Commands:
                 matches = [path_obj]
             else:
                 # If literal path doesn't exist, try globbing
+                # Escape [ and ] so literal bracket directory names (e.g. Next.js [id]) match
+                escaped_pattern = re.sub(r"([\[\]])", r"[\1]", expanded_pattern)
                 if is_abs:
                     # For absolute paths, glob it
-                    matches = [Path(p) for p in glob.glob(expanded_pattern)]
+                    matches = [Path(p) for p in glob.glob(escaped_pattern)]
                 else:
                     # For relative paths and globs, use glob from the root directory
-                    matches = list(Path(self.coder.root).glob(expanded_pattern))
+                    matches = list(Path(self.coder.root).glob(escaped_pattern))
 
             if not matches:
                 self.io.tool_error(f"No matches found for: {pattern}")
