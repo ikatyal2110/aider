@@ -14,7 +14,7 @@ from prompt_toolkit.output import DummyOutput
 from aider.coders import Coder
 from aider.dump import dump  # noqa: F401
 from aider.io import InputOutput
-from aider.main import check_gitignore, load_dotenv_files, main, setup_git
+from aider.main import check_gitignore, get_git_root, load_dotenv_files, main, setup_git
 from aider.utils import GitTemporaryDirectory, IgnorantTemporaryDirectory, make_repo
 
 
@@ -1481,3 +1481,11 @@ class TestMain(TestCase):
             )
         for call in mock_io_instance.tool_warning.call_args_list:
             self.assertNotIn("Cost estimates may be inaccurate", call[0][0])
+
+    def test_get_git_root_no_such_path(self):
+        # git.exc.NoSuchPathError is raised on Windows when the cwd contains
+        # special characters (e.g. F:\$data\python). It must be caught and
+        # get_git_root() must return None instead of crashing.
+        with patch("aider.main.git.Repo", side_effect=git.exc.NoSuchPathError("no such path")):
+            result = get_git_root()
+        self.assertIsNone(result)
