@@ -65,6 +65,17 @@ class TestMain(TestCase):
         self.assertTrue(os.path.exists("foo.txt"))
         self.assertTrue(os.path.exists("bar.txt"))
 
+    def test_main_with_file_name_too_long(self):
+        # Path.is_dir() raises OSError (ENAMETOOLONG) for very long filenames.
+        # main() must not let the OSError propagate uncaught (#5465).
+        long_name = "a" * 300
+        # Should not raise OSError; main treats it as a regular (non-directory) file
+        main(
+            [long_name, "--no-git", "--exit", "--yes"],
+            input=DummyInput(),
+            output=DummyOutput(),
+        )
+
     def test_main_with_dname_and_fname(self):
         subdir = Path("subdir")
         subdir.mkdir()

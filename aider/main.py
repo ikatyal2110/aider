@@ -689,7 +689,11 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     if len(all_files) > 1:
         good = True
         for fname in all_files:
-            if Path(fname).is_dir():
+            try:
+                is_dir = Path(fname).is_dir()
+            except OSError:
+                is_dir = False
+            if is_dir:
                 io.tool_error(f"{fname} is a directory, not provided alone.")
                 good = False
         if not good:
@@ -701,7 +705,11 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
     git_dname = None
     if len(all_files) == 1:
-        if Path(all_files[0]).is_dir():
+        try:
+            first_is_dir = Path(all_files[0]).is_dir()
+        except OSError:
+            first_is_dir = False
+        if first_is_dir:
             if args.git:
                 git_dname = str(Path(all_files[0]).resolve())
                 fnames = []

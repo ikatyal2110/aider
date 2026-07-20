@@ -456,14 +456,26 @@ class Coder:
                 self.io.tool_warning(f"Skipping {fname} that matches aiderignore spec.")
                 continue
 
-            if not fname.exists():
+            try:
+                file_exists = fname.exists()
+            except OSError:
+                self.io.tool_warning(f"Can not access {fname}, skipping.")
+                continue
+
+            if not file_exists:
                 if utils.touch_file(fname):
                     self.io.tool_output(f"Creating empty file {fname}")
                 else:
                     self.io.tool_warning(f"Can not create {fname}, skipping.")
                     continue
 
-            if not fname.is_file():
+            try:
+                is_regular = fname.is_file()
+            except OSError:
+                self.io.tool_warning(f"Skipping {fname} that is not a normal file.")
+                continue
+
+            if not is_regular:
                 self.io.tool_warning(f"Skipping {fname} that is not a normal file.")
                 continue
 
