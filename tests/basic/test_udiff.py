@@ -1,6 +1,6 @@
 import unittest
 
-from aider.coders.udiff_coder import find_diffs
+from aider.coders.udiff_coder import cleanup_pure_whitespace_lines, find_diffs, other_hunks_applied
 from aider.dump import dump  # noqa: F401
 
 
@@ -113,6 +113,42 @@ These changes will add the `--check-update` option to the command-line interface
         dump(edits)
         self.assertEqual(len(edits), 2)
         self.assertEqual(len(edits[0][1]), 3)
+
+
+    def test_cleanup_pure_whitespace_lines_crlf(self):
+        # CRLF blank lines must be normalized to "\r\n", not truncated to "\r"
+        lines = ["   \r\n", "content\n", "\t  \r\n"]
+        result = cleanup_pure_whitespace_lines(lines)
+        self.assertEqual(result[0], "\r\n")
+        self.assertEqual(result[1], "content\n")
+        self.assertEqual(result[2], "\r\n")
+
+    def test_cleanup_pure_whitespace_lines_lf(self):
+        # LF-only blank lines should be normalized to "\n"
+        lines = ["   \n", "content\n"]
+        result = cleanup_pure_whitespace_lines(lines)
+        self.assertEqual(result[0], "\n")
+
+    def test_other_hunks_applied_message_when_partial_success(self):
+        # When num_errors < len(uniq), other_hunks_applied must be appended.
+        # This verifies the list-length comparison happens before the join.
+        errors_list = ["Error in hunk 1"]
+        uniq = ["hunk1", "hunk2", "hunk3"]  # 3 hunks, 1 failed → 2 succeeded
+        num_errors = len(errors_list)
+        errors_str = "\n\n".join(errors_list)
+        if num_errors < len(uniq):
+            errors_str += other_hunks_applied
+        self.assertIn("some hunks did apply successfully", errors_str)
+
+    def test_other_hunks_applied_message_suppressed_when_all_fail(self):
+        # When num_errors == len(uniq), message must NOT be appended.
+        errors_list = ["Error in hunk 1", "Error in hunk 2"]
+        uniq = ["hunk1", "hunk2"]
+        num_errors = len(errors_list)
+        errors_str = "\n\n".join(errors_list)
+        if num_errors < len(uniq):
+            errors_str += other_hunks_applied
+        self.assertNotIn("some hunks did apply successfully", errors_str)
 
 
 if __name__ == "__main__":

@@ -112,8 +112,9 @@ class UnifiedDiffCoder(Coder):
             self.io.write_text(full_path, content)
 
         if errors:
+            num_errors = len(errors)
             errors = "\n\n".join(errors)
-            if len(errors) < len(uniq):
+            if num_errors < len(uniq):
                 errors += other_hunks_applied
             raise ValueError(errors)
 
@@ -242,7 +243,7 @@ def make_new_lines_explicit(content, hunk):
 
 def cleanup_pure_whitespace_lines(lines):
     res = [
-        line if line.strip() else line[-(len(line) - len(line.rstrip("\r\n")))] for line in lines
+        line if line.strip() else line[-(len(line) - len(line.rstrip("\r\n"))):] for line in lines
     ]
     return res
 
