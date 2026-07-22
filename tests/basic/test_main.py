@@ -14,7 +14,7 @@ from prompt_toolkit.output import DummyOutput
 from aider.coders import Coder
 from aider.dump import dump  # noqa: F401
 from aider.io import InputOutput
-from aider.main import check_gitignore, load_dotenv_files, main, setup_git
+from aider.main import check_gitignore, get_git_root, load_dotenv_files, main, setup_git
 from aider.utils import GitTemporaryDirectory, IgnorantTemporaryDirectory, make_repo
 
 
@@ -1481,3 +1481,11 @@ class TestMain(TestCase):
             )
         for call in mock_io_instance.tool_warning.call_args_list:
             self.assertNotIn("Cost estimates may be inaccurate", call[0][0])
+
+    def test_get_git_root_returns_none_on_no_such_path(self):
+        # Paths containing special characters (e.g. '$') can cause GitPython to raise
+        # NoSuchPathError on Windows before we know there is no repo.  Aider should
+        # treat this the same as "not inside a git repo" rather than crashing.
+        with patch("git.Repo", side_effect=git.exc.NoSuchPathError("fake/path")):
+            result = get_git_root()
+        self.assertIsNone(result)
