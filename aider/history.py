@@ -76,13 +76,12 @@ class ChatSummary:
         keep = []
         total = 0
 
-        # Iterate in original order, summing tokens until limit
-        for tokens, msg in sized_head:
-            total += tokens
-            if total > model_max_input_tokens:
+        for tokens, msg in reversed(sized_head):
+            if total + tokens > model_max_input_tokens:
                 break
+            total += tokens
             keep.append(msg)
-        # No need to reverse lists back and forth
+        keep.reverse()
 
         summary = self.summarize_all(keep)
 
