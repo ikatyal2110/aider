@@ -72,6 +72,22 @@ def test_gitignore_patterns():
     tmp_gitignore.unlink()
 
 
+def test_load_gitignores_non_utf8_bytes(tmp_path):
+    """load_gitignores should not crash when a .gitignore file contains bytes
+    that are undefined in the system's default encoding (e.g. cp1252 on Windows)."""
+    from aider.watch import load_gitignores
+
+    gitignore = tmp_path / ".gitignore"
+    # 0x9d is undefined in cp1252 and triggers UnicodeDecodeError when the
+    # file is opened without an explicit encoding on Windows.
+    gitignore.write_bytes(b"*.log\n# non-utf8 byte: \x9d\n*.tmp\n")
+
+    spec = load_gitignores([gitignore])
+    assert spec is not None
+    assert spec.match_file("debug.log")
+    assert spec.match_file("temp.tmp")
+
+
 def test_get_roots_to_watch(tmp_path):
     # Create a test directory structure
     (tmp_path / "included").mkdir()
