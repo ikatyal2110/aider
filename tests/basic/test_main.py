@@ -14,7 +14,7 @@ from prompt_toolkit.output import DummyOutput
 from aider.coders import Coder
 from aider.dump import dump  # noqa: F401
 from aider.io import InputOutput
-from aider.main import check_gitignore, load_dotenv_files, main, setup_git
+from aider.main import check_gitignore, get_git_root, load_dotenv_files, main, setup_git
 from aider.utils import GitTemporaryDirectory, IgnorantTemporaryDirectory, make_repo
 
 
@@ -1469,6 +1469,11 @@ class TestMain(TestCase):
 
             # Restore CWD
             os.chdir(original_cwd)
+
+    def test_get_git_root_no_such_path(self):
+        with patch("aider.main.git.Repo", side_effect=git.NoSuchPathError("bad/path")):
+            result = get_git_root()
+        self.assertIsNone(result)
 
     @patch("aider.main.InputOutput")
     def test_cache_without_stream_no_warning(self, MockInputOutput):
