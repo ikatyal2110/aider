@@ -72,6 +72,19 @@ def test_gitignore_patterns():
     tmp_gitignore.unlink()
 
 
+def test_gitignore_non_ascii(tmp_path):
+    """load_gitignores should not raise on gitignore files with non-UTF-8 bytes"""
+    from aider.watch import load_gitignores
+
+    gitignore = tmp_path / ".gitignore"
+    # Write a gitignore containing a non-UTF-8 byte sequence (e.g. latin-1 em-dash)
+    gitignore.write_bytes(b"build/\n# caf\xe9\n*.log\n")
+    spec = load_gitignores([gitignore])
+    assert spec is not None
+    assert spec.match_file("build/output")
+    assert spec.match_file("run.log")
+
+
 def test_get_roots_to_watch(tmp_path):
     # Create a test directory structure
     (tmp_path / "included").mkdir()
