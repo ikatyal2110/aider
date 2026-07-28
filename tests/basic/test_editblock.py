@@ -89,6 +89,13 @@ class TestUtils(unittest.TestCase):
         result = eb.strip_quoted_wrapping(input_text)
         self.assertEqual(result, expected_output)
 
+    def test_strip_quoted_wrapping_only_filename(self):
+        # When input is only the filename line, stripping it leaves an empty
+        # list. Previously the fence check on res[0] raised IndexError.
+        input_text = "filename.ext\n"
+        result = eb.strip_quoted_wrapping(input_text, "filename.ext")
+        self.assertEqual(result, "")
+
     def test_find_original_update_blocks(self):
         edit = """
 Here's the change:
