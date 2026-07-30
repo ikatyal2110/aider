@@ -122,7 +122,11 @@ class GitRepo:
             raise FileNotFoundError
 
         # https://github.com/gitpython-developers/GitPython/issues/427
-        self.repo = git.Repo(repo_paths.pop(), odbt=git.GitDB)
+        repo_path = repo_paths.pop()
+        try:
+            self.repo = git.Repo(repo_path, odbt=git.GitDB)
+        except ANY_GIT_ERROR:
+            self.repo = git.Repo(repo_path)
         self.root = utils.safe_abs_path(self.repo.working_tree_dir)
 
         if aider_ignore_file:

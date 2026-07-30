@@ -714,3 +714,26 @@ class TestRepo(unittest.TestCase):
                 system_msg_content.startswith(prefix),
                 "system_prompt_prefix should be prepended to the system prompt",
             )
+
+
+
+class TestGitRepoInit(unittest.TestCase):
+    def test_gitdb_fallback_on_odb_error(self):
+        with GitTemporaryDirectory():
+            repo = git.Repo()
+            fname = Path("foo.txt")
+            fname.touch()
+            repo.git.add(str(fname))
+            repo.git.commit("-m", "init")
+
+            original_repo_cls = git.Repo
+
+            def repo_side_effect(*args, **kwargs):
+                if kwargs.get("odbt") is git.GitDB:
+                    raise git.exc.ODBError("simulated BadObject")
+                return original_repo_cls(*args, **kwargs)
+
+            with patch("aider.repo.git.Repo", side_effect=repo_side_effect):
+                git_repo = GitRepo(InputOutput(), None, ".")
+
+            self.assertIsNotNone(git_repo.repo)
