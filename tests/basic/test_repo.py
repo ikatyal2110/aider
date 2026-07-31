@@ -111,6 +111,30 @@ class TestRepo(unittest.TestCase):
             self.assertIn("index", diffs)
             self.assertIn("workingdir", diffs)
 
+    def test_gitrepo_uses_default_object_db(self):
+        """GitRepo must not pass odbt=git.GitDB, which raises BadObject on some valid repos."""
+        with GitTemporaryDirectory() as dname:
+            repo = git.Repo()
+            fname = Path("foo.txt")
+            fname.touch()
+            repo.git.add(str(fname))
+            repo.git.commit("-m", "initial")
+
+            original_repo_cls = git.Repo
+            all_call_kwargs = []
+
+            def spy_repo(*args, **kwargs):
+                all_call_kwargs.append(kwargs)
+                return original_repo_cls(*args, **kwargs)
+
+            with patch("aider.repo.git.Repo", side_effect=spy_repo):
+                GitRepo(InputOutput(), None, dname)
+
+            # The final git.Repo() call (which sets self.repo) must not use odbt=git.GitDB.
+            # GitDB fails with BadObject on some valid repositories; the default
+            # GitCmdObjectDB backend is reliable.
+            self.assertNotIn("odbt", all_call_kwargs[-1])
+
     def test_diffs_between_commits(self):
         with GitTemporaryDirectory():
             repo = git.Repo()
