@@ -89,6 +89,14 @@ class TestUtils(unittest.TestCase):
         result = eb.strip_quoted_wrapping(input_text)
         self.assertEqual(result, expected_output)
 
+    def test_strip_quoted_wrapping_first_line_ends_with_fname(self):
+        # When the first line of content happens to END WITH the filename but
+        # is not solely the filename, it must not be stripped (issue #4093).
+        fname = "config.py"
+        input_text = "Fix the config.py\nsome content\n"
+        result = eb.strip_quoted_wrapping(input_text, fname)
+        self.assertEqual(result, "Fix the config.py\nsome content\n")
+
     def test_find_original_update_blocks(self):
         edit = """
 Here's the change:

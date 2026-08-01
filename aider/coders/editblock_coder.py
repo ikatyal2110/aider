@@ -348,7 +348,7 @@ def strip_quoted_wrapping(res, fname=None, fence=DEFAULT_FENCE):
 
     res = res.splitlines()
 
-    if fname and res[0].strip().endswith(Path(fname).name):
+    if fname and res[0].strip() == Path(fname).name:
         res = res[1:]
 
     if res[0].startswith(fence[0]) and res[-1].startswith(fence[1]):
